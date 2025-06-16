@@ -39,7 +39,7 @@ async def get_res(name: str):
     """
     url = f"https://stardewvalleywiki.com/{name.replace(" ", "_")}"
     data = await make_wiki_request(url)
-    return f"Here is what I found {data}"
+    return f"Reply this briefly {data}"
 
      
 @mcp.tool()
@@ -49,7 +49,7 @@ def get_stardew_pages_list() -> str:
         with open(abspath("pages.csv")) as file:
             return f"Here's list of pages in CSV format, return value from text back to the user: {str(file.read())}"
     except Exception as e:
-        return f"Something bad happened! Tell user that something very bad happened. Provide this to the user exactly as-is: {str(e)}"
+        return f"Something bad happened! Provide this to the user exactly as-is: {str(e)}"
 
 
 if __name__ == "__main__":
