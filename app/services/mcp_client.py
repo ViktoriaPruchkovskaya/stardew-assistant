@@ -23,61 +23,62 @@ class MCPClient:
             azure_deployment=config.deployment,
         )
         self.context: list[ResponseInputItemParam] = []
+        self.agent: Agent | None = None
         set_default_openai_api("chat_completions")
         set_default_openai_client(self.client)
         set_tracing_disabled(True)
 
     async def connect(self, server_script_path: str):
-        async with MCPServerStdio(params={"command": "uv", "args": ["run", server_script_path]}) as server:
-            agent = Agent(
-                name="Assistant",
-                instructions="You are a helpful assistant which answers stardew valley questions. Reply very conciesly.",
-                mcp_servers=[server],
-            )
-            await self.chat_loop(agent)
+        self.server = MCPServerStdio(params={"command": "uv", "args": ["run", server_script_path]})
+        await self.server.__aenter__()
 
-    async def process_query(self, agent: Agent, query: str) -> str:
+        self.agent = Agent(
+            name="Assistant",
+            instructions="You are a helpful assistant which answers Stardew Valley questions. Reply very conciesly.",
+            mcp_servers=[self.server],
+        )
+
+    async def shutdown(self):
+        await self.server.__aexit__(None, None, None)
+
+    async def process_query(self, query: str) -> str:
         """Process a query using OpenAI and available MCP tools"""
         self.context.append({"role": "user", "content": query})
-        result = await Runner.run(agent, self.context)
+        result = await Runner.run(self.agent, self.context)
         self.context.append({"role": "assistant", "content": result.final_output})
         await self.prune_context()
         return result.final_output
 
     async def prune_context(self):
         """Keep in the context only the last user-assistant messages, summarize the rest"""
-        MAX_TURNS = 4  # pairs of query-response
+        MAX_TURNS = 6  # pairs of query-response
         TOTAL = MAX_TURNS * 2
         if len(self.context) < TOTAL * 2:
             return
+        # 1. extract the summary if any
+        summary = None
+        if (
+            self.context
+            and self.context[0]["role"] == "assistant"
+            and "Summary of earlier conversation" in self.context[0]["content"]
+        ):
+            summary = self.context.pop(0)["content"]
+
+        # 2. split context into old and recent
         old_context = self.context[:TOTAL]  # all except last N turns
         recent_context = self.context[TOTAL:]  # last N turns intact
 
-        old_context_text = "\n".join(f"{msg['role'].capitalize()}: {msg['content']}" for msg in old_context)
+        # 3. assemble old messages into text
+        summary_context = summary + "\n" if summary else ""
+        summary_context += "\n".join(f"{msg['role'].capitalize()}: {msg['content']}" for msg in old_context)
+
+        # 4. summarize assembled messages
         summarize_agent = Agent(
             name="Summarizer",
-            instructions="Summarize the earlier user-assistant conversation concisely. Focus on key topics",
+            instructions="Summarize the earlier user-assistant conversation concisely within Stardew Valley topic. Focus only on asnwers",
         )
-        result = await Runner.run(summarize_agent, old_context_text)
+        result = await Runner.run(summarize_agent, summary_context)
         summary_text = result.final_output
         self.context = [
-            {"role": "system", "content": f"Summary of earlier conversation:\n{summary_text}"}
+            {"role": "assistant", "content": f"Summary of earlier conversation:\n{summary_text}"}
         ] + recent_context
-
-    async def chat_loop(self, agent: Agent):
-        """Run an interactive chat loop"""
-        print("\nMCP Client Started!")
-        print("Type your queries or 'quit' to exit.")
-
-        while True:
-            try:
-                query = input("\nQuery: ").strip()
-
-                if query.lower() == "quit":
-                    break
-
-                response = await self.process_query(agent, query)
-                print("\n" + response)
-
-            except Exception as e:
-                print(f"\nError: {str(e)}")
