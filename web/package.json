@@ -15,12 +15,15 @@
     "@parcel/config-default": "^2.15.2",
     "@parcel/transformer-raw": "^2.15.2",
     "@parcel/validator-typescript": "^2.15.2",
-    "parcel": "^2.15.2"
+    "@tailwindcss/postcss": "^4.1.10",
+    "parcel": "^2.15.2",
+    "postcss": "^8.5.6"
   },
   "dependencies": {
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "tailwindcss": "^4.1.10"
   }
 }
