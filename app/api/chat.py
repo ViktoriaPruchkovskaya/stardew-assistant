@@ -10,10 +10,10 @@ class ChatRequest(BaseModel):
 
 @router.get("/")
 def read_root():
-    return {"Message": "Hello World! FastAPI is working."}
+    return {"message": "Hello World! FastAPI is working."}
 
 
 @router.post("/")
 async def get_info(data: ChatRequest, req: Request):
     res = await req.app.state.client.process_query(data.message)
-    return {"Message": res}
+    return {"message": res}
