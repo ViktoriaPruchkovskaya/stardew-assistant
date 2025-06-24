@@ -1,0 +1,11 @@
+{
+    "configurations": [
+        {
+            "command": "pnpm start",
+            "name": "Run pnpm start",
+            "request": "launch",
+            "type": "node-terminal",
+            "cwd": "${workspaceFolder}/web",
+        }
+    ]
+}
