@@ -1,6 +1,14 @@
 {
     "configurations": [
         {
+            "name": "uv run",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "main.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/app"
+        },
+        {
             "command": "pnpm start",
             "name": "Run pnpm start",
             "request": "launch",

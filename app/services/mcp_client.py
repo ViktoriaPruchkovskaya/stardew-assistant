@@ -4,6 +4,7 @@ from agents import Agent, Runner, set_default_openai_api, set_default_openai_cli
 from agents.mcp.server import MCPServerStdio
 from openai import AsyncAzureOpenAI
 from openai.types.responses import ResponseInputItemParam
+from persistences.mongo_db import MongoDB
 
 
 @dataclass
@@ -15,7 +16,8 @@ class Config:
 
 
 class MCPClient:
-    def __init__(self, config: Config):
+    def __init__(self, config: Config, db: MongoDB):
+        self.db = db
         self.client = AsyncAzureOpenAI(
             api_version=config.version,
             azure_endpoint=config.endpoint,
@@ -24,6 +26,7 @@ class MCPClient:
         )
         self.context: list[ResponseInputItemParam] = []
         self.agent: Agent | None = None
+
         set_default_openai_api("chat_completions")
         set_default_openai_client(self.client)
         set_tracing_disabled(True)
@@ -43,9 +46,12 @@ class MCPClient:
 
     async def process_query(self, query: str) -> str:
         """Process a query using OpenAI and available MCP tools"""
-        self.context.append({"role": "user", "content": query})
+        request = {"role": "user", "content": query}
+        self.context.append(request)
         result = await Runner.run(self.agent, self.context)
-        self.context.append({"role": "assistant", "content": result.final_output})
+        response = {"role": "assistant", "content": result.final_output}
+        self.context.append(response)
+        await self.db.insert_many("stardew", [request, response])
         await self.prune_context()
         return result.final_output
 

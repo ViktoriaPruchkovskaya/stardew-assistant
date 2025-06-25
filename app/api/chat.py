@@ -1,7 +1,13 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Depends
 from pydantic import BaseModel
 
+from services.container import IOCContainer
+
 router = APIRouter(prefix="/chat", tags=["chat"])
+
+
+def get_services(request: Request) -> IOCContainer:
+    return request.app.state.services
 
 
 class ChatRequest(BaseModel):
@@ -14,6 +20,6 @@ def read_root():
 
 
 @router.post("/")
-async def get_info(data: ChatRequest, req: Request):
-    res = await req.app.state.client.process_query(data.message)
+async def get_info(data: ChatRequest, services: IOCContainer = Depends(get_services)):
+    res = await services.mcp_client_service.process_query(data.message)
     return {"message": res}
