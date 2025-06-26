@@ -1,12 +1,13 @@
 import * as React from 'react';
 import { useState } from 'react';
-import ChatService, { ChatMessage } from '../services/ChatService';
+import ChatService, { ChatMessage } from '../../services/ChatService';
 
 interface ChatFormProps {
+    chatId: string,
     onMessageSent: (message: ChatMessage) => void
 }
 
-export default function ChatForm({ onMessageSent }: ChatFormProps) {
+export default function ChatForm({ chatId, onMessageSent }: ChatFormProps) {
     const [inputValue, setInputValue] = useState("");
     const handleForm = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -19,7 +20,7 @@ export default function ChatForm({ onMessageSent }: ChatFormProps) {
         setInputValue('');
 
         (async () => {
-            const res = await new ChatService().sendQuestion(question);
+            const res = await new ChatService().sendMessage({ id: chatId, message: question });
             onMessageSent(res)
 
         })();
