@@ -16,8 +16,8 @@ class Config:
 
 
 class MCPClient:
-    def __init__(self, config: Config, db: MongoDB):
-        self.db = db
+    def __init__(self, config: Config):
+
         self.client = AsyncAzureOpenAI(
             api_version=config.version,
             azure_endpoint=config.endpoint,
@@ -40,9 +40,11 @@ class MCPClient:
             instructions="You are a helpful assistant which answers Stardew Valley questions. Reply very conciesly.",
             mcp_servers=[self.server],
         )
+        return self
 
     async def shutdown(self):
         await self.server.__aexit__(None, None, None)
+        return self
 
     async def process_query(self, query: str) -> str:
         """Process a query using OpenAI and available MCP tools"""
@@ -51,7 +53,7 @@ class MCPClient:
         result = await Runner.run(self.agent, self.context)
         response = {"role": "assistant", "content": result.final_output}
         self.context.append(response)
-        await self.db.insert_many("stardew", [request, response])
+        # await self.db.insert_many("stardew", [request, response])
         await self.prune_context()
         return result.final_output
 
