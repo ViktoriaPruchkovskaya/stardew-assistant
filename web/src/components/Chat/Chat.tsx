@@ -16,8 +16,13 @@ export default function Chat() {
         if (state?.newChat) {
             return
         }
-        const data = new ChatService().getChat({ id: id! }) // check if chat exists
-        setMessages(data.messages)
+        const fetchData = async () => {
+            const chatService = new ChatService()
+            const data = await chatService.getChat({ id: id! }) // check if chat exists
+            setMessages(data.messages)
+        }
+        fetchData()
+
     }, [])
     const onMessageSent = (msg: ChatMessage) => {
         setMessages(prevMessages => [...prevMessages, msg]);

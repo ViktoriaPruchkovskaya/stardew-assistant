@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Request, Depends
 from pydantic import BaseModel
 
-from persistences.mongo_db import MongoDB
+from services.chat_service import Message
 from services.ioc import ServiceContainer
 
 router = APIRouter(prefix="/chat", tags=["chat"])
@@ -16,17 +16,19 @@ class ChatRequest(BaseModel):
 
 
 @router.get("/{chat_id}")
-async def get_chat(chat_id: str):
-    # chat = await db.get("stardew", chat_id)
-    # if not chat:
-    #     raise HTTPException(status_code=404, detail="Chat not found")
-    # return chat
-    return ""
+async def get_chat(chat_id: str, services: ServiceContainer = Depends(get_services)):
+    try:
+        chat = services.chat_service.get_chat(chat_id=chat_id)
+        return chat
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 @router.post("/{chat_id}")
 async def send_message(chat_id: str, data: ChatRequest, services: ServiceContainer = Depends(get_services)):
     res = await services.mcp_client.process_query(data.message)
+    messages = [Message(role="user", text=data.message), Message(role="assistant", text=res)]
+    await services.chat_service.append_messages(chat_id=chat_id, messages=messages)
     return {"message": res}
 
 

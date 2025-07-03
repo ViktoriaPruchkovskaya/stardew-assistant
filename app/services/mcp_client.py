@@ -53,7 +53,6 @@ class MCPClient:
         result = await Runner.run(self.agent, self.context)
         response = {"role": "assistant", "content": result.final_output}
         self.context.append(response)
-        # await self.db.insert_many("stardew", [request, response])
         await self.prune_context()
         return result.final_output
 

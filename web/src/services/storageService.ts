@@ -29,11 +29,4 @@ export default class StorageService {
             messages: chat.messages
         }
     }
-
-    public updateChat({ id, newMessages }: { id: string, newMessages: ChatMessage[] }) {
-        const chat: Chat = this.getChat({ id })
-        const { id: chatId, ...data } = { ...chat, messages: [...chat.messages, ...newMessages] }
-
-        localStorage.setItem(id, JSON.stringify(data))
-    }
 }
