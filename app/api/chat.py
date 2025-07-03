@@ -24,7 +24,13 @@ async def get_chat(chat_id: str):
     return ""
 
 
-@router.post("/")
-async def send_message(data: ChatRequest, services: ServiceContainer = Depends(get_services)):
-    res = await services._mcp_client.process_query(data.message)
+@router.post("/{chat_id}")
+async def send_message(chat_id: str, data: ChatRequest, services: ServiceContainer = Depends(get_services)):
+    res = await services.mcp_client.process_query(data.message)
     return {"message": res}
+
+
+@router.post("/")
+async def create_chat(services: ServiceContainer = Depends(get_services)):
+    res = await services.chat_service.create_chat()
+    return {"id": res}

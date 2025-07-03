@@ -1,13 +1,21 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router";
+import { useParams, useLocation, Location } from "react-router";
 import ChatForm from "./ChatForm";
 import MessageList from "../MessageList/MessageList";
 import ChatService, { ChatMessage } from "../../services/ChatService";
 
+interface LocationState {
+    newChat: boolean;
+}
+
 export default function Chat() {
+    const { state } = useLocation() as Location<LocationState>;
     let { id } = useParams();
     const [messages, setMessages] = useState<ChatMessage[]>([])
     useEffect(() => {
+        if (state?.newChat) {
+            return
+        }
         const data = new ChatService().getChat({ id: id! }) // check if chat exists
         setMessages(data.messages)
     }, [])

@@ -1,4 +1,3 @@
-import { nanoid } from 'nanoid'
 import StorageService from './storageService';
 import ChatClient from '../clients/chatClient';
 
@@ -25,9 +24,9 @@ export default class ChatService {
         this.chatClient = new ChatClient()
     }
 
-    public createChat(): string {
-        const chatId = nanoid()
-        this.storageService.createChat({ id: chatId, createdAt: new Date().toISOString() })
+    public async createChat(): Promise<string> {
+        const chatId = await this.chatClient.createChat()
+        this.storageService.createChat({ id: chatId })
         return chatId
     }
 
