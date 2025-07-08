@@ -38,6 +38,3 @@ class MongoDB:
         collection = self.connection[collection_name]
         result = await collection.update_one({"_id": document_id}, query)
         return result.modified_count
-
-    async def close(self):
-        await self.client.close()

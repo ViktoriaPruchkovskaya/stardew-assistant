@@ -14,6 +14,5 @@ class PersistenceContainer:
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        return
-        # if self._mongo:
-        #     await self._mongo.client.close()
+        if self._mongo:
+            self._mongo.client.close()
