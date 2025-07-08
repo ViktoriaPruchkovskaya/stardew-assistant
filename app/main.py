@@ -1,36 +1,33 @@
 import asyncio
-import os
 from contextlib import asynccontextmanager
 
+from api import router
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from services.mcp_client import Config, MCPClient
-from api import router
+from persistences.ioc import PersistenceContainer
+from services.ioc import ServiceContainer
 
 load_dotenv()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    config: Config = Config(
-        version=os.getenv("API_VERSION"),
-        endpoint=os.getenv("ENDPOINT"),
-        api_key=os.getenv("SUBSCRIPTION_KEY"),
-        deployment=os.getenv("DEPLOYMENT"),
-    )
-    client = MCPClient(config)
-    await client.connect("mcp_tools/wiki_processor.py")
-    app.state.client = client
-    yield
-    await client.shutdown()
+    async with PersistenceContainer() as persistence:
+        services = ServiceContainer(persistence)
+        await services.start()
+        app.state.persistence = persistence
+        app.state.services = services
+
+        yield
+        await services.shutdown()
 
 
 app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # or ["*"] for dev
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

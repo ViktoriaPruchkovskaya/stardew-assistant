@@ -1,4 +1,3 @@
-import { nanoid } from 'nanoid'
 import StorageService from './storageService';
 import ChatClient from '../clients/chatClient';
 
@@ -25,22 +24,20 @@ export default class ChatService {
         this.chatClient = new ChatClient()
     }
 
-    public createChat(): string {
-        const chatId = nanoid()
-        this.storageService.createChat({ id: chatId, createdAt: new Date().toISOString() })
+    public async createChat(): Promise<string> {
+        const chatId = await this.chatClient.createChat()
+        this.storageService.createChat({ id: chatId })
         return chatId
     }
 
-    public getChat({ id }: { id: string }): Chat {
-        const chat = this.storageService.getChat({ id })
+    public async getChat({ id }: { id: string }): Promise<Chat> {
+        const chat = await this.chatClient.getChat({ id })
         return { id: chat.id, createdAt: chat.createdAt, messages: chat.messages.map(msg => ({ sender: msg.sender, text: msg.text })) }
     }
 
     public async sendMessage({ id, message }: { id: string, message: string }): Promise<ChatMessage> {
-        const response: string = await this.chatClient.sendMessage(message)
+        const response: string = await this.chatClient.sendMessage({ id, message })
 
-        const newMessages: ChatMessage[] = [{ sender: 'user', text: response }, { sender: 'assistant', text: response }]
-        this.storageService.updateChat({ id, newMessages })
         return { sender: 'assistant', text: response }
     }
 }
