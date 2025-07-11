@@ -58,7 +58,7 @@ class CachedRepository:
         if not stored_record[list_name]:
             return []
 
-        await self.append_list(collection=collection, id=id, list_name=list_name, values=stored_record[list_name])
+        self._cache.push(f"{collection}:{id}:{list_name}", [json.dumps(item) for item in stored_record[list_name]])
         return stored_record[list_name]
 
     async def append_list(self, collection: str, id: str, list_name: str, values: list[dict]):
