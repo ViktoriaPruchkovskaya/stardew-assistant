@@ -39,6 +39,6 @@ export default class ChatClient {
             }
         })
         const parsed = await res.json()
-        return { id: parsed._id, createdAt: parsed.created_at, messages: parsed.message.map(msg => ({ sender: msg.role, text: msg.text })) }
+        return { id: parsed._id, createdAt: parsed.created_at, messages: parsed.messages.map(msg => ({ sender: msg.role, text: msg.text })) }
     }
 }

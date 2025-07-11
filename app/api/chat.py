@@ -18,7 +18,7 @@ class ChatRequest(BaseModel):
 @router.get("/{chat_id}")
 async def get_chat(chat_id: str, services: ServiceContainer = Depends(get_services)):
     try:
-        chat = services.chat_service.get_chat(chat_id=chat_id)
+        chat = await services.chat_service.get_chat(chat_id)
         return chat
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))

@@ -25,9 +25,9 @@ class MongoDB:
         result = await collection.insert_many(documents)
         return result.inserted_ids
 
-    async def get(self, collection_name: str, document_id: id, model: type[T]) -> T | None:
+    async def get(self, collection_name: str, document_id: id, options: dict = {}):
         collection = self.connection[collection_name]
-        result = await collection.find_one({"_id": document_id})
+        result = await collection.find_one({"_id": document_id}, options)
         if result is None:
             return None
         result["_id"] = str(result["_id"])
