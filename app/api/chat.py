@@ -35,4 +35,4 @@ async def send_message(chat_id: str, data: ChatRequest, services: ServiceContain
 @router.post("/")
 async def create_chat(services: ServiceContainer = Depends(get_services)):
     res = await services.chat_service.create_chat()
-    return {"id": res}
+    return {"_id": res}

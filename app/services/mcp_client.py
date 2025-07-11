@@ -4,7 +4,6 @@ from agents import Agent, Runner, set_default_openai_api, set_default_openai_cli
 from agents.mcp.server import MCPServerStdio
 from openai import AsyncAzureOpenAI
 from openai.types.responses import ResponseInputItemParam
-from persistences.mongo_db import MongoDB
 
 
 @dataclass
