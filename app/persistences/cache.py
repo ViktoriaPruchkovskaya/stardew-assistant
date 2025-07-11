@@ -1,7 +1,7 @@
 from redis import Redis
 
 
-class RedisCache:
+class Cache:
     def __init__(self, password: str):
         self.redis: Redis = Redis(host="localhost", port=6379, decode_responses=True, password=password)
 

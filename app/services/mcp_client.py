@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional
 
 from agents import Agent, Runner, set_default_openai_api, set_default_openai_client, set_tracing_disabled
 from agents.mcp.server import MCPServerStdio
@@ -24,7 +25,7 @@ class MCPClient:
             azure_deployment=config.deployment,
         )
         self.context: list[ResponseInputItemParam] = []
-        self.agent: Agent | None = None
+        self.agent: Optional[Agent] = None
 
         set_default_openai_api("chat_completions")
         set_default_openai_client(self.client)

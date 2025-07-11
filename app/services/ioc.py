@@ -1,16 +1,17 @@
 import os
+from typing import Optional
 
 from persistences.ioc import PersistenceContainer
 
-from .chat_service import ChatService
-from .mcp_client import Config, MCPClient
+from services.chat_service import ChatService
+from services.mcp_client import Config, MCPClient
 
 
 class ServiceContainer:
     def __init__(self, persistence: PersistenceContainer):
         self.persistence = persistence
-        self.mcp_client: MCPClient = None
-        self.chat_service: None | ChatService = None
+        self.mcp_client: Optional[MCPClient] = None
+        self.chat_service: Optional[ChatService] = None
 
     async def start(self):
         await self.get_mcp_client()

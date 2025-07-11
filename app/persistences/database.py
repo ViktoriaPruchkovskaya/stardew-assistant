@@ -1,13 +1,12 @@
-from typing import List, TypeVar, Union
+from typing import List, Union
+
 from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorClient
-from pydantic import BaseModel
 
-T = TypeVar("T", bound=BaseModel)
 id = Union[str | ObjectId]
 
 
-class MongoDB:
+class Database:
     def __init__(self, connection_string: str, db_name: str):
         self.client = AsyncIOMotorClient(connection_string)
         self.connection = self.client[db_name]

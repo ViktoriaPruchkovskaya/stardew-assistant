@@ -25,10 +25,10 @@ class ChatService:
         chat = await self.repository.create_record(collection="chats", data={"messages": []})
         return chat["_id"]
 
-    async def get_chat(self, chat_id: str) -> any:
+    async def get_chat(self, chat_id: str) -> Chat:
         metadata = await self.repository.get_metadata("chats", chat_id)
         messages = await self.repository.get_list("chats", chat_id, "messages")
-        return {"_id": chat_id, "messages": messages, "created_at": metadata["created_at"]}
+        return Chat(_id=chat_id, messages=messages, created_at=metadata["created_at"])
 
     async def append_messages(self, chat_id: str, messages: list[Message]):
         messages_dicts = [asdict(msg) for msg in messages]

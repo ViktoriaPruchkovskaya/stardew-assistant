@@ -1,10 +1,10 @@
-from dataclasses import asdict, dataclass
-from typing import List, TypedDict
-from persistences.mongo_db import MongoDB
-from persistences.redis import RedisCache
-from datetime import datetime
-from uuid import uuid4
 import json
+from datetime import datetime
+from typing import TypedDict
+from uuid import uuid4
+
+from persistences.cache import Cache
+from persistences.database import Database
 
 
 class Metadata(TypedDict):
@@ -16,9 +16,9 @@ class CreatedRecord(Metadata, total=False):
 
 
 class CachedRepository:
-    def __init__(self, db: MongoDB, cache: RedisCache):
-        self._db: MongoDB = db
-        self._cache: RedisCache = cache
+    def __init__(self, db: Database, cache: Cache):
+        self._db: Database = db
+        self._cache: Cache = cache
 
     async def create_record(self, collection: str, data: dict) -> CreatedRecord:
         id = str(uuid4())
