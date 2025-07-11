@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, TypedDict
 
 from agents import Agent, Runner, set_default_openai_api, set_default_openai_client, set_tracing_disabled
 from agents.mcp.server import MCPServerStdio
@@ -13,6 +13,11 @@ class Config:
     endpoint: str
     api_key: str
     deployment: str
+
+
+class Message(TypedDict):
+    role: str  # "user" or "assistant"
+    content: str
 
 
 class MCPClient:
@@ -46,14 +51,18 @@ class MCPClient:
         await self.server.__aexit__(None, None, None)
         return self
 
-    async def process_query(self, query: str) -> str:
+    async def process_query(self, context: dict[Message]) -> str:
         """Process a query using OpenAI and available MCP tools"""
-        request = {"role": "user", "content": query}
-        self.context.append(request)
         result = await Runner.run(self.agent, self.context)
-        response = {"role": "assistant", "content": result.final_output}
-        self.context.append(response)
-        await self.prune_context()
+        # await self.prune_context()
+        return result.final_output
+
+    async def summarize_context(self, context: str) -> str:
+        summarize_agent = Agent(
+            name="Summarizer",
+            instructions="Summarize the earlier user-assistant conversation concisely within Stardew Valley topic. Focus only on asnwers",
+        )
+        result = await Runner.run(summarize_agent, context)
         return result.final_output
 
     async def prune_context(self):

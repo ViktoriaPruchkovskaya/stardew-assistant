@@ -20,6 +20,10 @@ class CachedRepository:
         self._db: Database = db
         self._cache: Cache = cache
 
+    async def get_from_db(self, collection: str, id: str, fields: list[str]):
+        options = [{field: 1} for field in fields]
+        return await self._db.get(collection, id, options)
+
     async def create_record(self, collection: str, data: dict) -> CreatedRecord:
         id = str(uuid4())
         created_at = datetime.now().isoformat()
@@ -27,7 +31,7 @@ class CachedRepository:
         extended_data.update({"_id": id, "created_at": created_at})
 
         await self._db.insert_one(collection, extended_data)
-        self.set_metadata(collection=collection, id=id, data={"created_at": created_at})
+        self.set_metadata(collection, id, {"created_at": created_at})
 
         return CreatedRecord(**extended_data)
 
@@ -61,6 +65,16 @@ class CachedRepository:
         self._cache.push(f"{collection}:{id}:{list_name}", [json.dumps(item) for item in stored_record[list_name]])
         return stored_record[list_name]
 
+    async def modify_list(
+        self, collection: str, id: str, list_name: str, items: list[dict], quantity: int, other_properties: dict
+    ):
+        await self._db.update_one(
+            collection, id, {"$push": {list_name: {"$each": items, "$slice": -quantity}}, "$set": other_properties}
+        )
+        self._cache.push(f"{collection}:{id}:{list_name}", [json.dumps(item) for item in items])
+        self._cache.trim_list(f"{collection}:{id}:{list_name}", -quantity, -1)
+        return
+
     async def append_list(self, collection: str, id: str, list_name: str, values: list[dict]):
-        await self._db.update_one("chats", id, {"$push": {list_name: {"$each": values}}})
+        await self._db.update_one(collection, id, {"$push": {list_name: {"$each": values}}})
         self._cache.push(f"{collection}:{id}:{list_name}", [json.dumps(value) for value in values])

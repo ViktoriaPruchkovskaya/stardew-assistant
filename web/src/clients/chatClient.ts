@@ -43,7 +43,7 @@ export default class ChatClient {
         return {
             id: parsed._id,
             createdAt: parsed.created_at,
-            messages: parsed.messages.map((msg: { role: Sender, text: string }) => ({ sender: msg.role, text: msg.text }))
+            messages: parsed.messages.map((msg: { role: Sender, content: string }) => ({ sender: msg.role, text: msg.content }))
         }
     }
 }

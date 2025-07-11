@@ -11,6 +11,9 @@ class Cache:
     def get_list(self, key, start: int, end: int):
         return self.redis.lrange(key, start, end)
 
+    def trim_list(self, key, start: int, end: int):
+        self.redis.ltrim(key, start, end)
+
     def set(self, key: str, val: str):
         self.redis.set(key, val, ex=3600)
 

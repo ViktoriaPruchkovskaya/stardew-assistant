@@ -32,7 +32,7 @@ class ServiceContainer:
 
     async def get_chat_service(self) -> ChatService:
         if self.chat_service is None:
-            self.chat_service = ChatService(self.persistence.cached_repository)
+            self.chat_service = ChatService(self.persistence.cached_repository, self.mcp_client)
         return self.chat_service
 
     async def shutdown(self):
