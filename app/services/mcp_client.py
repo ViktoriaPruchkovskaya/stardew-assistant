@@ -53,8 +53,7 @@ class MCPClient:
 
     async def process_query(self, context: dict[Message]) -> str:
         """Process a query using OpenAI and available MCP tools"""
-        result = await Runner.run(self.agent, self.context)
-        # await self.prune_context()
+        result = await Runner.run(self.agent, context)
         return result.final_output
 
     async def summarize_context(self, context: str) -> str:

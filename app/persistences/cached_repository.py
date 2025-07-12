@@ -21,7 +21,7 @@ class CachedRepository:
         self._cache: Cache = cache
 
     async def get_from_db(self, collection: str, id: str, fields: list[str]):
-        options = [{field: 1} for field in fields]
+        options = {field: 1 for field in fields}
         return await self._db.get(collection, id, options)
 
     async def create_record(self, collection: str, data: dict) -> CreatedRecord:

@@ -1,7 +1,6 @@
 from fastapi import APIRouter, HTTPException, Request, Depends
 from pydantic import BaseModel
 
-from services.chat_service import Message
 from services.ioc import ServiceContainer
 
 router = APIRouter(prefix="/chat", tags=["chat"])

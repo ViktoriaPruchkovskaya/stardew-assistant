@@ -24,7 +24,7 @@ class ChatService:
         self.repository = repository
 
     async def create_chat(self) -> str:
-        chat = await self.repository.create_record(collection="chats", data={"messages": []})
+        chat = await self.repository.create_record(collection="chats", data={"messages": [], "summary": ""})
         return chat["_id"]
 
     async def get_chat(self, chat_id: str) -> Chat:
@@ -39,27 +39,30 @@ class ChatService:
         result = await self.mcp_client.process_query(context)
         context.append({"role": "assistant", "content": result})
 
-        MAX_TURNS = 2  # pairs of query-response
+        MAX_TURNS = 6  # pairs of query-response
         TOTAL = MAX_TURNS * 2
         if len(context) < TOTAL * 2:
             await self.append_messages(
                 chat_id, [Message(role="user", content=message), Message(role="assistant", content=result)]
             )
             return result
-
-        old_context = self.context[:TOTAL]  # all except last N turns
-        recent_context = self.context[TOTAL:]  # last N turns intact
+        # 1. extract the summary if any
         record = await self.repository.get_from_db(collection="chats", id=chat_id, fields=["summary"])
+
+        # 2. split context into old and recent
+        old_context = context[:TOTAL]  # all except last N turns
+        recent_context = context[TOTAL:]  # last N turns intact
 
         # 3. assemble old messages into text
         summary_context = (
             record["summary"] + "\n" + "\n".join(f"{msg['role'].capitalize()}: {msg['content']}" for msg in old_context)
         )
-        summarized_context = await self.mcp_client.summarize_context(self, summary_context)
+        summarized_context = await self.mcp_client.summarize_context(summary_context)
         await self.repository.modify_list(
             collection="chats",
             id=chat_id,
             list_name="messages",
+            items=recent_context,
             quantity=len(recent_context),
             other_properties={"summary": summarized_context},
         )
