@@ -1,13 +1,12 @@
-from typing import List, TypeVar, Union
+from typing import List, Union
+
 from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorClient
-from pydantic import BaseModel
 
-T = TypeVar("T", bound=BaseModel)
 id = Union[str | ObjectId]
 
 
-class MongoDB:
+class Database:
     def __init__(self, connection_string: str, db_name: str):
         self.client = AsyncIOMotorClient(connection_string)
         self.connection = self.client[db_name]
@@ -25,9 +24,9 @@ class MongoDB:
         result = await collection.insert_many(documents)
         return result.inserted_ids
 
-    async def get(self, collection_name: str, document_id: id, model: type[T]) -> T | None:
+    async def get(self, collection_name: str, document_id: id, options: dict = {}):
         collection = self.connection[collection_name]
-        result = await collection.find_one({"_id": document_id})
+        result = await collection.find_one({"_id": document_id}, options)
         if result is None:
             return None
         result["_id"] = str(result["_id"])

@@ -1,6 +1,7 @@
 
+type Sender = 'user' | 'assistant'
 interface ChatMessage {
-    sender: 'user' | 'assistant',
+    sender: Sender,
     text: string
 }
 
@@ -29,7 +30,7 @@ export default class ChatClient {
             }
         })
         const parsed = await res.json()
-        return parsed.id
+        return parsed._id
     }
 
     public async getChat({ id }: { id: string }): Promise<Chat> {
@@ -39,6 +40,10 @@ export default class ChatClient {
             }
         })
         const parsed = await res.json()
-        return { id: parsed._id, createdAt: parsed.created_at, messages: parsed.message.map(msg => ({ sender: msg.role, text: msg.text })) }
+        return {
+            id: parsed._id,
+            createdAt: parsed.created_at,
+            messages: parsed.messages.map((msg: { role: Sender, content: string }) => ({ sender: msg.role, text: msg.content }))
+        }
     }
 }

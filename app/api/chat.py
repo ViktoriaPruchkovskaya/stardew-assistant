@@ -1,7 +1,6 @@
 from fastapi import APIRouter, HTTPException, Request, Depends
 from pydantic import BaseModel
 
-from services.chat_service import Message
 from services.ioc import ServiceContainer
 
 router = APIRouter(prefix="/chat", tags=["chat"])
@@ -18,7 +17,7 @@ class ChatRequest(BaseModel):
 @router.get("/{chat_id}")
 async def get_chat(chat_id: str, services: ServiceContainer = Depends(get_services)):
     try:
-        chat = services.chat_service.get_chat(chat_id=chat_id)
+        chat = await services.chat_service.get_chat(chat_id)
         return chat
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -26,13 +25,11 @@ async def get_chat(chat_id: str, services: ServiceContainer = Depends(get_servic
 
 @router.post("/{chat_id}")
 async def send_message(chat_id: str, data: ChatRequest, services: ServiceContainer = Depends(get_services)):
-    res = await services.mcp_client.process_query(data.message)
-    messages = [Message(role="user", text=data.message), Message(role="assistant", text=res)]
-    await services.chat_service.append_messages(chat_id=chat_id, messages=messages)
+    res = await services.chat_service.process_message(chat_id, data.message)
     return {"message": res}
 
 
 @router.post("/")
 async def create_chat(services: ServiceContainer = Depends(get_services)):
     res = await services.chat_service.create_chat()
-    return {"id": res}
+    return {"_id": res}

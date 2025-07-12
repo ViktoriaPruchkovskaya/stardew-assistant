@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useLocation, Location } from "react-router";
+import { useParams, useLocation, Location, useNavigate } from "react-router";
 import ChatForm from "./ChatForm";
 import MessageList from "../MessageList/MessageList";
 import ChatService, { ChatMessage } from "../../services/ChatService";
@@ -24,7 +24,11 @@ export default function Chat() {
         fetchData()
 
     }, [])
+    const navigate = useNavigate()
     const onMessageSent = (msg: ChatMessage) => {
+        if (state?.newChat) {
+            navigate(location.pathname, { replace: true });
+        }
         setMessages(prevMessages => [...prevMessages, msg]);
     };
     return (<div className="flex flex-col min-h-[calc(80vh)]">
