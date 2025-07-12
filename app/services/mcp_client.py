@@ -63,37 +63,3 @@ class MCPClient:
         )
         result = await Runner.run(summarize_agent, context)
         return result.final_output
-
-    async def prune_context(self):
-        """Keep in the context only the last user-assistant messages, summarize the rest"""
-        MAX_TURNS = 6  # pairs of query-response
-        TOTAL = MAX_TURNS * 2
-        if len(self.context) < TOTAL * 2:
-            return
-        # 1. extract the summary if any
-        summary = None
-        if (
-            self.context
-            and self.context[0]["role"] == "assistant"
-            and "Summary of earlier conversation" in self.context[0]["content"]
-        ):
-            summary = self.context.pop(0)["content"]
-
-        # 2. split context into old and recent
-        old_context = self.context[:TOTAL]  # all except last N turns
-        recent_context = self.context[TOTAL:]  # last N turns intact
-
-        # 3. assemble old messages into text
-        summary_context = summary + "\n" if summary else ""
-        summary_context += "\n".join(f"{msg['role'].capitalize()}: {msg['content']}" for msg in old_context)
-
-        # 4. summarize assembled messages
-        summarize_agent = Agent(
-            name="Summarizer",
-            instructions="Summarize the earlier user-assistant conversation concisely within Stardew Valley topic. Focus only on asnwers",
-        )
-        result = await Runner.run(summarize_agent, summary_context)
-        summary_text = result.final_output
-        self.context = [
-            {"role": "assistant", "content": f"Summary of earlier conversation:\n{summary_text}"}
-        ] + recent_context
