@@ -1,4 +1,4 @@
-import { Children, createContext, ReactNode } from "react";
+import { createContext, ReactNode } from "react";
 
 export interface ThemeContextProps {
     isDark: boolean;

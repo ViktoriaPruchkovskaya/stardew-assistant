@@ -1,11 +1,12 @@
 import { useNavigate } from "react-router"
-import ChatService from "../services/ChatService"
+import { useContext } from "react"
+import { ChatsContext } from "../contexts/chatsContext"
 
 export default function NewChatButton() {
     const navigate = useNavigate()
+    const { createChat } = useContext(ChatsContext)!
     const handleOnClick = async () => {
-        const chatService = new ChatService()
-        const id = await chatService.createChat()
+        const { id } = await createChat()
         navigate(`chat/${id}`, { state: { newChat: true } })
     }
     return <button

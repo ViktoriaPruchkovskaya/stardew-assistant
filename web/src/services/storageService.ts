@@ -1,34 +1,29 @@
-import { Chat } from "./ChatService"
-
 type Theme = 'dark' | 'light'
 
+
+
 export default class StorageService {
-    public createChat({ id }: {
-        id: string,
-        // createdAt: string
-    }): void {
+    public addChatId(chatId: string): void {
         const record: string | null = localStorage.getItem("chats")
         let chats: string[] = []
         if (record) {
             chats = JSON.parse(record)
         }
-        chats.push(id)
+        chats.push(chatId)
         localStorage.setItem("chats", JSON.stringify(chats))
     }
 
-    public getChat({ id }: {
-        id: string
-    }): Chat {
-        const record = localStorage.getItem(id)
+    public getChatIds(): string[] {
+        const record: string | null = localStorage.getItem("chats")
         if (!record) {
-            throw new Error('Could not retrieve chat')
+            return []
         }
-        const chat = JSON.parse(record)
-        return {
-            id: chat.id,
-            createdAt: chat.createdAt,
-            messages: chat.messages
-        }
+        const records = JSON.parse(record)
+        return records
+    }
+
+    public deleteChats(): void {
+        localStorage.removeItem('chats')
     }
 
     public setTheme(theme: Theme): void {

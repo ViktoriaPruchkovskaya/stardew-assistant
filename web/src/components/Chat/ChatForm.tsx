@@ -22,7 +22,6 @@ export default function ChatForm({ chatId, onMessageSent }: ChatFormProps) {
         (async () => {
             const res = await new ChatService().sendMessage({ id: chatId, message: question });
             onMessageSent(res)
-
         })();
     };
 

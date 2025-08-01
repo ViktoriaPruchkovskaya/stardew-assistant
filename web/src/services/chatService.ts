@@ -6,14 +6,14 @@ export interface ChatMessage {
     text: string
 }
 
-
-export interface Chat {
+export interface ChatMetadata {
     id: string;
     createdAt: string;
-    messages: ChatMessage[];
 }
 
-
+export interface Chat extends ChatMetadata {
+    messages: ChatMessage[];
+}
 
 export default class ChatService {
     private storageService: StorageService
@@ -24,10 +24,14 @@ export default class ChatService {
         this.chatClient = new ChatClient()
     }
 
-    public async createChat(): Promise<string> {
-        const chatId = await this.chatClient.createChat()
-        this.storageService.createChat({ id: chatId })
-        return chatId
+    public async createChat(): Promise<ChatMetadata> {
+        const createdChat = await this.chatClient.createChat()
+        this.storageService.addChatId(createdChat.id)
+        return createdChat
+    }
+
+    public async deleteChats({ ids }: { ids: string[] }): Promise<void> {
+        await this.chatClient.deleteChats({ ids })
     }
 
     public async getChat({ id }: { id: string }): Promise<Chat> {
@@ -37,7 +41,7 @@ export default class ChatService {
 
     public async sendMessage({ id, message }: { id: string, message: string }): Promise<ChatMessage> {
         const response: string = await this.chatClient.sendMessage({ id, message })
-
         return { sender: 'assistant', text: response }
     }
+
 }
