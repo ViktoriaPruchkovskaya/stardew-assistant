@@ -1,10 +1,14 @@
 
 type Sender = 'user' | 'assistant'
+
 interface ChatMessage {
     sender: Sender,
     text: string
 }
-
+interface CreatedChat {
+    id: string;
+    createdAt: string;
+}
 interface Chat {
     id: string;
     createdAt: string;
@@ -13,31 +17,32 @@ interface Chat {
 
 export default class ChatClient {
     private readonly baseUrl = "http://localhost:8000/api/chat"
+    private readonly headers = {
+        'Content-Type': 'application/json'
+    }
     public async sendMessage({ id, message }: { id: string, message: string }): Promise<string> {
         const res = await fetch(`${this.baseUrl}/${id}`, {
-            method: "POST", headers: {
-                'Content-Type': 'application/json'
-            }, body: JSON.stringify({ message })
+            method: "POST", headers: this.headers, body: JSON.stringify({ message })
         })
         const parsed = await res.json()
         return parsed.message
     }
 
-    public async createChat(): Promise<string> {
+    public async createChat(): Promise<CreatedChat> {
         const res = await fetch(`${this.baseUrl}`, {
-            method: "POST", headers: {
-                'Content-Type': 'application/json'
-            }
+            method: "POST", headers: this.headers
         })
         const parsed = await res.json()
-        return parsed._id
+        return { id: parsed._id, createdAt: parsed.created_at }
+    }
+
+    public async deleteChats({ ids }: { ids: string[] }): Promise<void> {
+        await fetch(`${this.baseUrl}`, { method: "DELETE", headers: this.headers, body: JSON.stringify({ ids }) })
     }
 
     public async getChat({ id }: { id: string }): Promise<Chat> {
         const res = await fetch(`${this.baseUrl}/${id}`, {
-            method: "GET", headers: {
-                'Content-Type': 'application/json'
-            }
+            method: "GET", headers: this.headers
         })
         const parsed = await res.json()
         return {

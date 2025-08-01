@@ -7,6 +7,7 @@ class Cache:
 
     def push(self, key: str, values: list[str]):
         self.redis.rpush(key, *values)
+        self.redis.expire(key, 3600)
 
     def get_list(self, key, start: int, end: int):
         return self.redis.lrange(key, start, end)
@@ -19,3 +20,6 @@ class Cache:
 
     def get(self, key: str) -> str:
         return self.redis.get(key)
+
+    def delete_many(self, keys: list[str]):
+        self.redis.delete(*keys)

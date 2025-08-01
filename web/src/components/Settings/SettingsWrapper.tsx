@@ -19,9 +19,7 @@ export default function SettingsWrapper() {
                 <div
                     className="fixed inset-0 bg-[rgba(0,0,0,0.3)]  backdrop-blur-sm z-40 transition-colors duration-200"
                 />
-                <div className='flex justify-center items-center'>
-                    <SettingsWindow onSettingsClose={() => setIsOpen(false)} />
-                </div>
+                <SettingsWindow onSettingsClose={() => setIsOpen(false)} />
             </>)
         }
     </div >)

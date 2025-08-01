@@ -18,19 +18,29 @@ class Chat:
     messages: list[Message]
 
 
+@dataclass
+class CreatedChat:
+    _id: str
+    created_at: str
+
+
 class ChatService:
     def __init__(self, repository: CachedRepository, mcp_client: MCPClient):
         self.mcp_client = mcp_client
         self.repository = repository
 
-    async def create_chat(self) -> str:
+    async def create_chat(self) -> CreatedChat:
         chat = await self.repository.create_record(collection="chats", data={"messages": [], "summary": ""})
-        return chat["_id"]
+        return CreatedChat(_id=chat["_id"], created_at=chat["created_at"])
 
     async def get_chat(self, chat_id: str) -> Chat:
         metadata = await self.repository.get_metadata("chats", chat_id)
         messages = await self._get_messages(chat_id)
         return Chat(_id=chat_id, messages=messages, created_at=metadata["created_at"])
+
+    async def delete_chats(self, chat_ids: list[str]):
+        await self.repository.delete_many("chats", chat_ids)
+        self.repository.delete_metadata("chats", chat_ids)
 
     async def process_message(self, chat_id: str, message: str) -> str:
         context = await self._get_messages(chat_id)

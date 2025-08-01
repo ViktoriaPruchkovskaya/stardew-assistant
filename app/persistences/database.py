@@ -33,6 +33,10 @@ class Database:
 
         return result
 
+    async def delete_many(self, collection_name: str, document_ids: list[id]):
+        collection = self.connection[collection_name]
+        collection.delete_many({"_id": {"$in": document_ids}})
+
     async def update_one(self, collection_name: str, document_id: id, query: dict) -> int:
         collection = self.connection[collection_name]
         result = await collection.update_one({"_id": document_id}, query)

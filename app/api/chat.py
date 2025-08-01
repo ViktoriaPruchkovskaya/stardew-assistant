@@ -14,6 +14,10 @@ class ChatRequest(BaseModel):
     message: str
 
 
+class DeleteChatsRequest(BaseModel):
+    ids: list[str]
+
+
 @router.get("/{chat_id}")
 async def get_chat(chat_id: str, services: ServiceContainer = Depends(get_services)):
     try:
@@ -32,4 +36,9 @@ async def send_message(chat_id: str, data: ChatRequest, services: ServiceContain
 @router.post("/")
 async def create_chat(services: ServiceContainer = Depends(get_services)):
     res = await services.chat_service.create_chat()
-    return {"_id": res}
+    return {"_id": res._id, "created_at": res.created_at}
+
+
+@router.delete("/")
+async def delete_chats(data: DeleteChatsRequest, services: ServiceContainer = Depends(get_services)):
+    await services.chat_service.delete_chats(data.ids)

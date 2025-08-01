@@ -35,8 +35,15 @@ class CachedRepository:
 
         return CreatedRecord(**extended_data)
 
-    def set_metadata(self, collection, id, data: dict):
+    def set_metadata(self, collection, id: str, data: dict):
         self._cache.set(f"{collection}:{id}:metadata", json.dumps(data))
+
+    async def delete_many(self, collection: str, ids: list[str]):
+        await self._db.delete_many(collection, ids)
+        self._cache.delete_many([f"{collection}:{id}" for id in ids])
+
+    def delete_metadata(self, collection: str, ids: list[str]):
+        self._cache.delete_many([f"{collection}:{id}:metadata" for id in ids])
 
     async def get_metadata(self, collection: str, id: str) -> Metadata:
         cached_record = self._cache.get(f"{collection}:{id}:metadata")
@@ -44,7 +51,7 @@ class CachedRepository:
             parsed = json.loads(cached_record)
             return Metadata(**parsed)
         selection = {field: 1 for field in Metadata.__annotations__.keys()}
-        stored_values = await self._db.get("chats", id, selection)
+        stored_values = await self._db.get(collection, id, selection)
         if not stored_values:
             raise Exception("No metadata found")
         stored_values.pop("_id", None)
