@@ -1,5 +1,22 @@
 services:
-  # env_file: ".env"
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mongo
+      - cache
+    environment:
+      DB_NAME: ${DB_NAME}
+      DB_HOST: mongo
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_HOST: cache
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      API_VERSION: ${API_VERSION}
+      ENDPOINT: ${ENDPOINT}
+      SUBSCRIPTION_KEY: ${SUBSCRIPTION_KEY}
+      DEPLOYMENT: ${DEPLOYMENT}
   mongo:
     image: mongo
     restart: always
@@ -11,7 +28,6 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: ${DB_PASSWORD}
   mongo-express:
     image: mongo-express
-    restart: always
     ports:
       - 8081:8081
     environment:
@@ -23,8 +39,7 @@ services:
       - mongo
   cache:
     image: redis:8.0.2-alpine
-    container_name: redis
-    restart: unless-stopped
+    restart: always
     ports:
       - 6379:6379
     command: redis-server --save 60 1 --loglevel warning --requirepass ${REDIS_PASSWORD}
@@ -34,7 +49,7 @@ services:
     image: redis:8.0.2-alpine
     depends_on:
       - cache
-    entrypoint: ["tail", "-f", "/dev/null"]
+    entrypoint: [ "tail", "-f", "/dev/null" ]
 volumes:
   cache:
     driver: local
