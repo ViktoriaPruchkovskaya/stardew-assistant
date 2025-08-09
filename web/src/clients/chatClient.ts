@@ -16,7 +16,7 @@ interface Chat {
 }
 
 export default class ChatClient {
-    private readonly baseUrl = "http://localhost:8000/api/chat"
+    private readonly baseUrl = "/api/chat"
     private readonly headers = {
         'Content-Type': 'application/json'
     }
