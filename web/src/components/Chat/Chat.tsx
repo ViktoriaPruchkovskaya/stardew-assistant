@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useLocation, Location, useNavigate } from "react-router";
 import ChatForm from "./ChatForm";
 import MessageList from "../MessageList/MessageList";
-import ChatService, { ChatMessage } from "../../services/ChatService";
+import ChatService, { ChatMessage } from "../../services/chatService";
 
 interface LocationState {
     newChat: boolean;

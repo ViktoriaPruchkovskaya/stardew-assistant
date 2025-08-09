@@ -16,13 +16,13 @@ class PersistenceContainer:
         self._db = self.init_db()
         await self._db.ping()
 
-        self._cache = Cache(os.getenv("REDIS_PASSWORD"))
+        self._cache = Cache(os.getenv("REDIS_HOST", "localhost"), os.getenv("REDIS_PASSWORD"))
         self.cached_repository = CachedRepository(self._db, self._cache)
 
         return self
 
     def init_db(self) -> Database:
-        connection_string = f"mongodb://{os.getenv("DB_USERNAME")}:{os.getenv("DB_PASSWORD")}@localhost:27017/"
+        connection_string = f"mongodb://{os.getenv("DB_USERNAME")}:{os.getenv("DB_PASSWORD")}@{os.getenv("DB_HOST", "localhost")}:27017/"
         return Database(connection_string, os.getenv("DB_NAME"))
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):

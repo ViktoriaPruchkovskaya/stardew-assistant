@@ -1,0 +1,10 @@
+include:
+  - ./app/compose.yaml
+
+services:
+  web:
+    build: ./web
+    ports:
+      - "80:80"
+    depends_on:
+      - app

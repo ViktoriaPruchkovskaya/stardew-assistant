@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useState } from 'react';
-import ChatService, { ChatMessage } from '../../services/ChatService';
+import ChatService, { ChatMessage } from '../../services/chatService';
 
 interface ChatFormProps {
     chatId: string,

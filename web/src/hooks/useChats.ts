@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import ChatService, { ChatMetadata } from "../services/ChatService"
+import ChatService, { ChatMetadata } from "../services/chatService"
 import StorageService from "../services/storageService"
 
 interface ChatsData {
