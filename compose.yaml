@@ -8,3 +8,6 @@ services:
       - "80:80"
     depends_on:
       - app
+    environment:
+      - SERVER_NAME=web
+      - API_HOST=app

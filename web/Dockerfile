@@ -14,4 +14,4 @@ FROM nginx
 
 COPY --from=base /web/dist /static
 
-COPY nginx.conf /etc/nginx/nginx.conf
+COPY nginx.conf /etc/nginx/templates/default.conf.template

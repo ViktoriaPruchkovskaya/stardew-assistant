@@ -95,3 +95,5 @@ To rewrite this file:
 cd app
 ur run wiki_crawler.py
 ```
+## Disclaimer
+This is an unofficial pet project. Stardew Valley is created by ConcernedApe.
