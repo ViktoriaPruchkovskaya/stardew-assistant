@@ -65,8 +65,8 @@ jobs:
 
       - name: Build and push web image to ACR
         run: |
-          docker build --platform linux/amd64 -t ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/stardew/app:${{ github.sha }} ./web
-          docker push ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/stardew/app:${{ github.sha }}
+          docker build --platform linux/amd64 -t ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/stardew/web:${{ github.sha }} ./web
+          docker push ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/stardew/web:${{ github.sha }}
 
   deploy:
     permissions:
