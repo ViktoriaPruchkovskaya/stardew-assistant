@@ -1,7 +1,7 @@
 import asyncio
 from contextlib import asynccontextmanager
 
-from api import router
+from api import chat_router, health_router
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -32,7 +32,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.include_router(router, prefix="/api")
+app.include_router(chat_router, prefix="/api")
+app.include_router(health_router)
 
 
 async def main():
