@@ -57,6 +57,9 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      - name: ACR login
+        run: az acr login -n ${{ env.AZURE_CONTAINER_REGISTRY }}
+
       # Builds and pushes an image up to your Azure Container Registry
       - name: Build and push app image to ACR
         run: |
