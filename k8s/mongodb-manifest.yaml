@@ -59,6 +59,9 @@ spec:
           volumeMounts:
             - name: mongodb-storage
               mountPath: "/data/db"
+            - name: secrets-store
+              mountPath: "/mnt/secrets"
+              readOnly: true
           resources:
             requests:
               memory: "128Mi"
@@ -70,6 +73,12 @@ spec:
         - name: mongodb-storage
           persistentVolumeClaim:
             claimName: mongodb-pvc
+        - name: secrets-store
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "keyvault-secrets"
 
 ---
 apiVersion: v1
