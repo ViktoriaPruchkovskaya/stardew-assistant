@@ -20,6 +20,3 @@ wheels/
 
 node_modules
 .idea
-
-# K8s
-/k8s/secret.yaml
