@@ -60,11 +60,15 @@ jobs:
       # Builds and pushes an image up to your Azure Container Registry
       - name: Build and push app image to ACR
         run: |
-          az acr build --image ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/stardew/app:${{ github.sha }} --registry ${{ env.AZURE_CONTAINER_REGISTRY }} -g ${{ env.RESOURCE_GROUP }} ./app
+          docker build --platform linux/amd64 -t ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/stardew/app:${{ github.sha }} ./app
+          docker tag ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/stardew/app:${{ github.sha }} ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/stardew/app:latest
+          docker push -a ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/stardew/app:${{ github.sha }}
 
       - name: Build and push web image to ACR
         run: |
-          az acr build --image ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/stardew/web:${{ github.sha }} --registry ${{ env.AZURE_CONTAINER_REGISTRY }} -g ${{ env.RESOURCE_GROUP }} ./web
+          docker build --platform linux/amd64 -t ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/stardew/web:${{ github.sha }} ./web
+          docker tag ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/stardew/web:${{ github.sha }} ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/stardew/web:latest
+          docker push -a ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/stardew/web:${{ github.sha }}
 
   deploy:
     permissions:
@@ -109,9 +113,4 @@ jobs:
             k8s/mongodb-manifest.yaml
             k8s/redis-manifest.yaml
             k8s/app-manifest.yaml
-
-      - name: Deploys web
-        uses: Azure/k8s-deploy@v4
-        with:
-          action: deploy
-          manifests: k8s/web-manifest.yaml
+            k8s/web-manifest.yaml
