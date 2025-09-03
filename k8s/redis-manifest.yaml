@@ -27,6 +27,10 @@ spec:
                 secretKeyRef:
                   name: stardew-secrets
                   key: redis-password
+          volumeMounts:
+            - name: secrets-store
+              mountPath: "/mnt/secrets"
+              readOnly: true
           resources:
             requests:
               memory: "64Mi"
@@ -34,6 +38,13 @@ spec:
             limits:
               memory: "128Mi"
               cpu: "250m"
+      volumes:
+        - name: secrets-store
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "keyvault-secrets"
 ---
 apiVersion: v1
 kind: Service
