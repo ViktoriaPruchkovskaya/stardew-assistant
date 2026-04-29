@@ -1,7 +1,7 @@
 from dataclasses import dataclass
-from typing import Optional, TypedDict
+from typing import Literal, Optional, TypedDict
 
-from agents import Agent, Runner, set_default_openai_api, set_default_openai_client, set_tracing_disabled
+from agents import Agent, ModelSettings, Runner, set_default_openai_api, set_default_openai_client, set_tracing_disabled
 from agents.mcp.server import MCPServerStdio
 from openai import AsyncAzureOpenAI
 from openai.types.responses import ResponseInputItemParam
@@ -16,7 +16,7 @@ class Config:
 
 
 class Message(TypedDict):
-    role: str  # "user" or "assistant"
+    role: Literal["user", "assistant", "system"]  # "user" or "assistant"
     content: str
 
 
@@ -42,7 +42,8 @@ class MCPClient:
 
         self.agent = Agent(
             name="Assistant",
-            instructions="You are a helpful assistant which answers Stardew Valley questions. Reply very conciesly.",
+            instructions="You answer Stardew Valley questions. Reply with a gist.",
+            model_settings=ModelSettings(tool_choice="required"),
             mcp_servers=[self.server],
         )
         return self
@@ -51,7 +52,7 @@ class MCPClient:
         await self.server.__aexit__(None, None, None)
         return self
 
-    async def process_query(self, context: dict[Message]) -> str:
+    async def process_query(self, context: list[Message]) -> str:
         """Process a query using OpenAI and available MCP tools"""
         result = await Runner.run(self.agent, context)
         return result.final_output
@@ -59,7 +60,15 @@ class MCPClient:
     async def summarize_context(self, context: str) -> str:
         summarize_agent = Agent(
             name="Summarizer",
-            instructions="Summarize the earlier user-assistant conversation concisely within Stardew Valley topic. Focus only on asnwers",
+            instructions=(
+                "Summarize prior Stardew chat into compact memory.\n"
+                "Output exactly these sections:\n"
+                "1) Assistant facts: key factual answers only.\n"
+                "2) User intent/constraints: preferences, goals, corrections.\n"
+                "3) Open threads: unanswered or pending items.\n"
+                "4) Important entities: item names, NPCs, seasons, places.\n"
+                "Keep it concise, max ~180 words."
+            ),
         )
         result = await Runner.run(summarize_agent, context)
         return result.final_output

@@ -43,31 +43,41 @@ class ChatService:
         self.repository.delete_metadata("chats", chat_ids)
 
     async def process_message(self, chat_id: str, message: str) -> str:
-        context = await self._get_messages(chat_id)
-        query = {"role": "user", "content": message}
-        context.append(query)
-        result = await self.mcp_client.process_query(context)
-        context.append({"role": "assistant", "content": result})
+        summary = await self.repository.get_summary("chats", chat_id)
+        prompt_context: list[Message] = (
+            [{"role": "system", "content": f"Conversation memory:\n{summary}"}] if summary else []
+        )
 
+        recent_messages = await self._get_messages(chat_id)
+        prompt_context.extend(recent_messages)
+        query = {"role": "user", "content": message}
+        prompt_context.append(query)
+        result = await self.mcp_client.process_query(prompt_context)
+
+        updated_messages = recent_messages + [query, {"role": "assistant", "content": result}]
         MAX_TURNS = 6  # pairs of query-response
         TOTAL = MAX_TURNS * 2
-        if len(context) < TOTAL * 2:
+
+        if len(updated_messages) < TOTAL * 2:
             await self.append_messages(
                 chat_id, [Message(role="user", content=message), Message(role="assistant", content=result)]
             )
             return result
-        # 1. extract the summary if any
-        record = await self.repository.get_from_db(collection="chats", id=chat_id, fields=["summary"])
-
-        # 2. split context into old and recent
-        old_context = context[:TOTAL]  # all except last N turns
-        recent_context = context[TOTAL:]  # last N turns intact
-
-        # 3. assemble old messages into text
+        # 1. split context into old and recent
+        old_context = updated_messages[:TOTAL]  # all except last N turns
+        recent_context = updated_messages[TOTAL:]  # last N turns intact
+        # 2. merge previous summary with old_context before re-summarizing
+        prev_summary = f"Previous summary:\n{summary}\n\n" if summary else ""
+        turns_block = "\n".join(f"{msg['role'].capitalize()}: {msg['content']}" for msg in old_context)
         summary_context = (
-            record["summary"] + "\n" + "\n".join(f"{msg['role'].capitalize()}: {msg['content']}" for msg in old_context)
+            f"{prev_summary}"
+            "Conversation turns to compress.\n"
+            "Preserve user constraints and assistant factual conclusions.\n"
+            f"{turns_block}"
         )
+
         summarized_context = await self.mcp_client.summarize_context(summary_context)
+
         await self.repository.modify_list(
             collection="chats",
             id=chat_id,

@@ -3,7 +3,6 @@ from collections import deque
 from typing import Set, Tuple
 
 import httpx
-from bs4 import BeautifulSoup
 
 
 async def crawl_wiki(entrypoint: str):
@@ -14,7 +13,7 @@ async def crawl_wiki(entrypoint: str):
     while len(queue) > 0:
         curr = queue.popleft()
         print(f"Visiting {curr}...")
-        data = await make_wiki_request(f"https://stardewvalleywiki.com/Special:WhatLinksHere{curr}")
+        data = await make_backlinks_request(curr)
         if data:
             for href, title in data:
                 if title in visited or title in ignored:
@@ -22,33 +21,41 @@ async def crawl_wiki(entrypoint: str):
                 print(f"{title} -> {href}")
                 visited.add(title)
                 queue.append(href)
-
+        await asyncio.sleep(1)
     with open("pages.csv", "w") as file:
         file.write(",".join(visited))
 
 
-async def make_wiki_request(url: str) -> list[Tuple[str, str]] | None:
-    """Make a request to the Stardew Valley wiki"""
+async def make_backlinks_request(page: str) -> list[Tuple[str, str]] | None:
     headers = {
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml",
+        "Accept": "application/json",
     }
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.get(url, headers=headers, timeout=30.0)
-            response.raise_for_status()
-            soup = BeautifulSoup(response.content, "html.parser")
 
-            link_tags = soup.select("#mw-whatlinkshere-list li a")
+    params = {
+        "action": "query",
+        "list": "backlinks",
+        "bltitle": page,
+        "blnamespace": 0,  # main/article namespace only
+        "blfilterredir": "nonredirects",
+        "bllimit": "max",
+        "format": "json",
+        "formatversion": 2,
+    }
+    async with httpx.AsyncClient(base_url="https://stardewvalleywiki.com") as client:
+        try:
+            response = await client.get("mediawiki/api.php", headers=headers, params=params, timeout=30.0)
+            response.raise_for_status()
+            data = response.json()
+            backlinks = data.get("query", {}).get("backlinks", [])
             linked_pages: list[Tuple[str, str]] = []
-            for tag in link_tags:
-                href = tag.get("href")
-                title = tag.get("title")
-                if href and title and ":" not in href and "mediawiki" not in href:
-                    linked_pages.append((href, title))
+            for link in backlinks:
+                title = link.get("title")
+                if title:
+                    linked_pages.append((title.replace(" ", "_"), title))
             return linked_pages
-        except Exception:
+        except Exception as err:
+            print(f"Unexpected error:{err}")
             return None
 
 
-asyncio.run(crawl_wiki("/Getting_Started"))
+asyncio.run(crawl_wiki("Getting_Started"))
