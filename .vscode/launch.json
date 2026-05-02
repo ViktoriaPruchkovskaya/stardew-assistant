@@ -9,6 +9,14 @@
             "cwd": "${workspaceFolder}/app"
         },
         {
+            "name": "uv run crawler",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "wiki_crawler.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/app"
+        },
+        {
             "command": "pnpm start",
             "name": "Run pnpm start",
             "request": "launch",
