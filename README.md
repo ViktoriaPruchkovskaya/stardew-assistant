@@ -3,21 +3,19 @@
 </p>
 
 An AI-powered web assistant for Stardew Valley players, featuring a chat-style interface that provides contextual game information and guidance. Instead of spending hours browsing the official wiki, users can ask questions in natural language and get quick, relevant responses.
-## Feautres 
+## Features 
 - Chat interface: Natural conversation style interaction for asking game-related questions
 - Contextual information: Retrieves and analyzes information from the [official Stardew Valley wiki](https://stardewvalleywiki.com/Stardew_Valley_Wiki)
 - Multi-turn Conversations: Maintains conversation context across multiple interactions using Redis caching
 - Chats Management: Navigate through chat history and manage past conversations
 - Real-time Responses: Fast, responsive AI-powered assistance for gameplay questions
-- Apearance Management: UI automatically adapts to system preferences with the ability to manually toggle between light and dark themes
+- Appearance Management: UI automatically adapts to system preferences with the ability to manually toggle between light and dark themes
 ## How It Works
 1. **User Flow**: Users navigate to the main page and either create a new chat or select from previous conversations
 2. **Question Processing**: When a question is submitted, the server formulates chat context using cached conversation data from Redis
-3. **Wiki Integration**: The question and context are sent to MCP (Model Context Protocol), which:
-    - Analyzes the topic and determines relevant Wiki pages/sections using a pre-built CSV index of all Wiki content
-    - Fetches targeted information from the official Stardew Valley Wiki
-    - Filters only necessary data based on the question and conversation context
-    - Maintains conversation context for follow-up questions (e.g., "Where does Penny live?" -> "What does she like?")
+3. **Wiki Integration**: The question is processed in two complementary ways:
+    - **RAG (Retrieval-Augmented Generation)**: The question is embedded and semantically similar wiki article chunks are retrieved from ChromaDB, which is pre-seeded by crawling the official Stardew Valley Wiki
+    - **MCP (Model Context Protocol)**: The question and context are also sent to MCP, which analyzes the topic, formulates query and maintains conversation context for follow-up questions (e.g., "Where does Penny live?" -> "What does she like?") 
 4. **Response Delivery**: The processed information is returned to the user through the chat interface
 5. **Chat Persistence**: Conversations are stored in MongoDB, with active chats cached in Redis for performance
 6. **Context Management**: To keep multi-round conversations compact and manageable, the system stores several conversation rounds and automatically summarizes them when the context size reaches the limit, maintaining conversation history while optimizing performance
@@ -26,6 +24,7 @@ An AI-powered web assistant for Stardew Valley players, featuring a chat-style i
 - Python
 - FastAPI
 - MongoDB
+- ChromaDB
 - Redis
 - MCP (Model Context Protocol)
 - Azure AI
@@ -89,11 +88,15 @@ pnpm start
 ```
 Frontend will be available at http://localhost:8080
 ## Other
-MCP looks up for available topics crawled from the [official Stardew Valley wiki](https://stardewvalleywiki.com/Stardew_Valley_Wiki) and assembled in pages.csv file.
-To rewrite this file:
+### RAG Pipeline
+The vector database (ChromaDB) must be seeded before the assistant can use RAG-based retrieval. The pipeline crawls the [official Stardew Valley Wiki](https://stardewvalleywiki.com/Stardew_Valley_Wiki), parses article content, and stores embedded chunks in ChromaDB.
+
+To seed the vector database:
 ```
 cd app
-ur run wiki_crawler.py
+uv run -m rag_pipeline.main
 ```
+This only needs to be run once (or whenever you want to refresh the wiki content).
+
 ## Disclaimer
 This is an unofficial pet project. Stardew Valley is created by ConcernedApe.
