@@ -1,7 +1,7 @@
 from typing import List, Union
 
 from bson import ObjectId
-from motor.motor_asyncio import AsyncIOMotorClient
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCursor
 
 id = Union[str | ObjectId]
 
@@ -24,7 +24,7 @@ class Database:
         result = await collection.insert_many(documents)
         return result.inserted_ids
 
-    async def get(self, collection_name: str, document_id: id, options: dict = {}):
+    async def get(self, collection_name: str, document_id: id, options: dict = {}) -> any:
         collection = self.connection[collection_name]
         result = await collection.find_one({"_id": document_id}, options)
         if result is None:
@@ -32,6 +32,10 @@ class Database:
         result["_id"] = str(result["_id"])
 
         return result
+
+    def get_batch(self, collection_name: str, batch_size=50) -> AsyncIOMotorCursor:
+        collection = self.connection[collection_name]
+        return collection.find(no_cursor_timeout=True).batch_size(batch_size)
 
     async def delete_many(self, collection_name: str, document_ids: list[id]):
         collection = self.connection[collection_name]

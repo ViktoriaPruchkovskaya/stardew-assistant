@@ -42,7 +42,17 @@ class MCPClient:
 
         self.agent = Agent(
             name="Assistant",
-            instructions="You answer Stardew Valley questions. Reply with a gist.",
+            instructions=(
+                "You are a Stardew Valley assistant.\n"
+                "Use conversation memory and user preferences from context. Avoid mentioning game name\n"
+                "Workflow:\n"
+                "1) For factual gameplay questions, call search_pages_vector with the user's question first.\n"
+                "2) Use tool evidence as the primary source of truth for factual claims.\n"
+                "3) For follow-up questions with implicit references (for example, pronouns), resolve them from conversation memory.\n"
+                "4) Answer with the gist only: 1-3 short bullets, max 70 words total, unless the user asks for more detail.\n"
+                "5) Apply user preferences and constraints when formatting and prioritizing the answer.\n"
+                "6) If evidence is missing or conflicting, say so briefly and ask one clarifying question.\n"
+            ),
             model_settings=ModelSettings(tool_choice="required"),
             mcp_servers=[self.server],
         )
@@ -55,6 +65,11 @@ class MCPClient:
     async def process_query(self, context: list[Message]) -> str:
         """Process a query using OpenAI and available MCP tools"""
         result = await Runner.run(self.agent, context)
+        # usage = result.context_wrapper.usage
+        # print("Requests:", usage.requests)
+        # print("Input tokens:", usage.input_tokens)
+        # print("Output tokens:", usage.output_tokens)
+        # print("Total tokens:", usage.total_tokens)
         return result.final_output
 
     async def summarize_context(self, context: str) -> str:
