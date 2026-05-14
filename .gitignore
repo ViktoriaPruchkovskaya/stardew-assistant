@@ -20,3 +20,6 @@ wheels/
 
 node_modules
 .idea
+.ipynb_checkpoints
+# Vector db
+/app/db/

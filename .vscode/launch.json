@@ -6,7 +6,16 @@
             "request": "launch",
             "program": "main.py",
             "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}/app"
+            "cwd": "${workspaceFolder}/app",
+        },
+        {
+            "name": "uv run crawler",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "wiki_crawler.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/app",
+            "envFile": "${workspaceFolder}/app/.env"
         },
         {
             "command": "pnpm start",
@@ -14,6 +23,15 @@
             "request": "launch",
             "type": "node-terminal",
             "cwd": "${workspaceFolder}/web",
+        },
+        {
+            "name": "uv run rag",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "rag_pipeline.main",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/app",
+            "envFile": "${workspaceFolder}/app/.env"
         }
     ]
 }

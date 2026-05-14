@@ -26,6 +26,8 @@ services:
       MONGO_INITDB_DATABASE: ${DB_NAME}
       MONGO_INITDB_ROOT_USERNAME: ${DB_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - 'mongo_data:/data/db'
   mongo-express:
     image: mongo-express
     ports:
@@ -52,4 +54,6 @@ services:
     entrypoint: [ "tail", "-f", "/dev/null" ]
 volumes:
   cache:
+    driver: local
+  mongo_data:
     driver: local
