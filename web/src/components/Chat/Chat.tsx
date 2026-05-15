@@ -11,7 +11,8 @@ interface LocationState {
 export default function Chat() {
     const { state } = useLocation() as Location<LocationState>;
     let { id } = useParams();
-    const [messages, setMessages] = useState<ChatMessage[]>([])
+    const [messages, setMessages] = useState<ChatMessage[]>([]);
+
     useEffect(() => {
         if (state?.newChat) {
             return
@@ -22,8 +23,7 @@ export default function Chat() {
             setMessages(data.messages)
         }
         fetchData()
-
-    }, [])
+    }, [id])
     const navigate = useNavigate()
     const onMessageSent = (msg: ChatMessage) => {
         if (state?.newChat) {
