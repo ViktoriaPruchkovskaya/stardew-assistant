@@ -36,42 +36,9 @@ class ChatService:
         self.repository.delete_metadata("chats", chat_ids)
 
     async def process_message(self, chat_id: str, message: str) -> str:
-        summary = await self.repository.get_summary("chats", chat_id)
-        prompt_context: list[Message] = (
-            [Message(role="system", content=f"Conversation memory:\n{summary}")] if summary else []
-        )
-
-        recent_messages = await self._get_messages(chat_id)
-        prompt_context.extend(recent_messages)
-        query = Message(role="user", content=message)
-        prompt_context.append(query)
-        result = await self.query_service.process_query(prompt_context)
-
-        updated_messages = recent_messages + [query, Message(role="assistant", content=result)]
-        MAX_TURNS = 6  # pairs of query-response
-        TOTAL = MAX_TURNS * 2
-
-        if len(updated_messages) < TOTAL * 2:
-            await self.append_messages(
-                chat_id, [Message(role="user", content=message), Message(role="assistant", content=result)]
-            )
-            return result
-        # 1. split context into old and recent
-        old_context = updated_messages[:TOTAL]  # all except last N turns
-        recent_context = updated_messages[TOTAL:]  # last N turns intact
-        # 2. merge previous summary with old_context before re-summarizing
-        context = [Message(role="system", content=f"Conversation memory:\n{summary}")] if summary else []
-        context.extend(old_context)
-
-        summarized_context = await self.query_service.summarize_context(context)
-
-        await self.repository.modify_list(
-            collection="chats",
-            id=chat_id,
-            list_name="messages",
-            items=recent_context,
-            quantity=len(recent_context),
-            other_properties={"summary": summarized_context},
+        result = await self.query_service.process_query(chat_id, message)
+        await self.append_messages(
+            chat_id, [Message(role="user", content=message), Message(role="assistant", content=result)]
         )
         return result
 

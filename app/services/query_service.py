@@ -1,11 +1,18 @@
 from dataclasses import dataclass
-from typing import Literal, Optional, TypedDict
+from typing import Any, Literal, TypedDict
 
 from langchain_openai import ChatOpenAI
-from langchain.agents import create_agent
+from langchain.agents import create_agent, AgentState
+from langgraph.runtime import Runtime
+from services.tools.wiki_tool import search_pages_vector
+from langchain.messages import RemoveMessage, HumanMessage
+
+# from langchain_core.messages.utils import trim_messages as trim_messages_util
+from langgraph.checkpoint.mongodb.saver import MongoDBSaver
+from langgraph.graph.message import REMOVE_ALL_MESSAGES
 
 from services.tools.wiki_tool import search_pages_vector
-from langchain.messages import SystemMessage, HumanMessage, AIMessage
+from langchain.agents.middleware import before_model
 
 
 @dataclass
@@ -21,8 +28,31 @@ class Message(TypedDict):
     content: str
 
 
+@before_model
+def trim_messages(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+    """Keep only the last few messages to fit context window."""
+    messages = state["messages"]
+
+    # trimmed = trim_messages_util(
+    #     messages,
+    #     max_tokens=10000,
+    #     strategy="last",
+    #     token_counter="approximate",
+    #     start_on="human",
+    #     include_system=True,
+    #     allow_partial=False,
+    # )
+    if len(messages) <= 3:
+        return None  # No changes needed
+    first_msg = messages[0]
+    recent_messages = messages[-3:] if len(messages) % 2 == 0 else messages[-4:]
+    new_messages = [first_msg] + recent_messages
+
+    return {"messages": [RemoveMessage(id=REMOVE_ALL_MESSAGES), *new_messages]}
+
+
 class QueryService:
-    def __init__(self, config: Config):
+    def __init__(self, config: Config, checkpointer: MongoDBSaver):
         self.model = ChatOpenAI(
             base_url=config.endpoint,
             api_key=config.api_key,
@@ -42,7 +72,15 @@ class QueryService:
                 "4) Answer with the gist only: max 70-100 words total, unless the user asks for more detail.\n"
                 "5) Apply user preferences and constraints when formatting and prioritizing the answer.\n"
                 "6) If evidence is missing or conflicting, say so briefly and ask one clarifying question.\n"
+                "## Memory rules:\n"
+                "- Save facts about user preferences, playstyle, progress, and goals\n"
+                "- Save when user reveals something personal\n"
+                "- Do NOT save questions, game facts, or temporary states\n"
+                "- Update existing memories if new info contradicts them\n"
+                "- Keep each memory short and factual"
             ),
+            middleware=[trim_messages],
+            checkpointer=checkpointer,
         )
         self.summary_agent = create_agent(
             self.model,
@@ -58,25 +96,14 @@ class QueryService:
             ),
         )
 
-    async def process_query(self, context: list[Message]) -> str:
-        """Process a query using OpenAI and available MCP tools"""
-        # messages = self.to_messages(summary, history, new_message)
-        result = await self.chat_agent.ainvoke({"messages": context})
-        # result = await Runner.run(self.agent, messages)
-        # usage = result.context_wrapper.usage
-        # print("Requests:", usage.requests)
-        # print("Input tokens:", usage.input_tokens)
-        # print("Output tokens:", usage.output_tokens)
-        # print("Total tokens:", usage.total_tokens)
+    async def process_query(self, chat_id: str, message: str) -> str:
+        """Process a query using the chat agent with per-chat short-term memory."""
+        result = await self.chat_agent.ainvoke(
+            {"messages": [HumanMessage(content=message)]},
+            config={"configurable": {"thread_id": chat_id}},
+        )
         return result["messages"][-1].content
 
     async def summarize_context(self, context: list[Message]) -> str:
         result = await self.summary_agent.ainvoke({"messages": context})
         return result["messages"][-1].content
-
-    def to_messages(self, summary: Optional[Message], history: list[Message], new_message: str) -> list:
-        messages = [SystemMessage(summary["content"])] if summary else []
-        for msg in history:
-            messages.append(AIMessage(msg["content"]) if msg["role"] == "assistant" else HumanMessage(msg["content"]))
-        messages.append(HumanMessage(new_message))
-        return messages

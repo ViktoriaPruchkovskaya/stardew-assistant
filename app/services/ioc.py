@@ -25,7 +25,7 @@ class ServiceContainer:
                 api_key=os.getenv("SUBSCRIPTION_KEY"),
                 deployment=os.getenv("DEPLOYMENT"),
             )
-            self.query_service = QueryService(config)
+            self.query_service = QueryService(config, self.persistence.checkpointer)
         return self.query_service
 
     async def get_chat_service(self) -> ChatService:
