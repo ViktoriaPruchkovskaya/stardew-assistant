@@ -21,7 +21,6 @@ async def lifespan(app: FastAPI):
         app.state.services = services
 
         yield
-        await services.shutdown()
 
 
 app = FastAPI(lifespan=lifespan)
