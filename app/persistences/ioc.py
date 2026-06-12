@@ -17,20 +17,22 @@ class PersistenceContainer:
         self.checkpointer: Optional[MongoDBSaver] = None
 
     async def __aenter__(self) -> "PersistenceContainer":
-        self._db = self.init_db()
+        self._db = PersistenceContainer.init_db()
         await self._db.ping()
 
         self._cache = Cache(os.getenv("REDIS_HOST", "localhost"), os.getenv("REDIS_PASSWORD"))
         self.cached_repository = CachedRepository(self._db, self._cache)
-        conn = MongoClient(
-            f"mongodb://{os.getenv("DB_USERNAME")}:{os.getenv("DB_PASSWORD")}@{os.getenv("DB_HOST", "localhost")}:27017/"
-        )
+        conn = MongoClient(self.db_connection_string())
         self.checkpointer = MongoDBSaver(conn)
         return self
 
-    def init_db(self) -> Database:
-        connection_string = f"mongodb://{os.getenv("DB_USERNAME")}:{os.getenv("DB_PASSWORD")}@{os.getenv("DB_HOST", "localhost")}:27017/"
-        return Database(connection_string, os.getenv("DB_NAME"))
+    @staticmethod
+    def init_db() -> Database:
+        return Database(PersistenceContainer.db_connection_string(), os.getenv("DB_NAME"))
+
+    @staticmethod
+    def db_connection_string() -> str:
+        return f"mongodb://{os.getenv("DB_USERNAME")}:{os.getenv("DB_PASSWORD")}@{os.getenv("DB_HOST", "localhost")}:27017/"
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         if self._db:

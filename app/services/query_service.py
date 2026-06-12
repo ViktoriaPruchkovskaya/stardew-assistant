@@ -9,6 +9,7 @@ from langchain.messages import RemoveMessage, HumanMessage
 
 # from langchain_core.messages.utils import trim_messages as trim_messages_util
 from langgraph.checkpoint.mongodb.saver import MongoDBSaver
+from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph.message import REMOVE_ALL_MESSAGES
 
 from services.tools.wiki_tool import search_pages_vector
@@ -52,7 +53,7 @@ def trim_messages(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
 
 
 class QueryService:
-    def __init__(self, config: Config, checkpointer: MongoDBSaver):
+    def __init__(self, config: Config, checkpointer: MongoDBSaver | InMemorySaver):
         self.model = ChatOpenAI(
             base_url=config.endpoint,
             api_key=config.api_key,
@@ -70,31 +71,24 @@ class QueryService:
                 "2) Use tool evidence as the primary source of truth for factual claims.\n"
                 "3) For follow-up questions with implicit references (for example, pronouns), resolve them from conversation memory.\n"
                 "4) Answer with the gist only: max 70-100 words total, unless the user asks for more detail.\n"
-                "5) Apply user preferences and constraints when formatting and prioritizing the answer.\n"
-                "6) If evidence is missing or conflicting, say so briefly and ask one clarifying question.\n"
-                "## Memory rules:\n"
-                "- Save facts about user preferences, playstyle, progress, and goals\n"
-                "- Save when user reveals something personal\n"
-                "- Do NOT save questions, game facts, or temporary states\n"
-                "- Update existing memories if new info contradicts them\n"
-                "- Keep each memory short and factual"
+                "5) If evidence is missing or conflicting, say so briefly and ask one clarifying question.\n"
             ),
             middleware=[trim_messages],
             checkpointer=checkpointer,
         )
-        self.summary_agent = create_agent(
-            self.model,
-            name="Summary_Agent",
-            system_prompt=(
-                "Summarize into compact memory.\n"
-                "Output exactly these sections:\n"
-                "1) Assistant facts: key factual answers only.\n"
-                "2) User intent/constraints: preferences, goals, corrections.\n"
-                "3) Open threads: unanswered or pending items.\n"
-                "4) Important entities: item names, NPCs, seasons, places.\n"
-                "Keep it concise, max ~180 words."
-            ),
-        )
+        # self.summary_agent = create_agent(
+        #     self.model,
+        #     name="Summary_Agent",
+        #     system_prompt=(
+        #         "Summarize into compact memory.\n"
+        #         "Output exactly these sections:\n"
+        #         "1) Assistant facts: key factual answers only.\n"
+        #         "2) User intent/constraints: preferences, goals, corrections.\n"
+        #         "3) Open threads: unanswered or pending items.\n"
+        #         "4) Important entities: item names, NPCs, seasons, places.\n"
+        #         "Keep it concise, max ~180 words."
+        #     ),
+        # )
 
     async def process_query(self, chat_id: str, message: str) -> str:
         """Process a query using the chat agent with per-chat short-term memory."""
