@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Literal, TypedDict
+from typing import Any
 
 from langchain_openai import ChatOpenAI
 from langchain.agents import create_agent, AgentState
@@ -24,11 +24,6 @@ class Config:
     deployment: str
 
 
-class Message(TypedDict):
-    role: Literal["user", "assistant", "system"]
-    content: str
-
-
 @before_model
 def trim_messages(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
     """Keep only the last few messages to fit context window."""
@@ -44,7 +39,7 @@ def trim_messages(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
     #     allow_partial=False,
     # )
     if len(messages) <= 3:
-        return None  # No changes needed
+        return None 
     first_msg = messages[0]
     recent_messages = messages[-3:] if len(messages) % 2 == 0 else messages[-4:]
     new_messages = [first_msg] + recent_messages
@@ -76,19 +71,7 @@ class QueryService:
             middleware=[trim_messages],
             checkpointer=checkpointer,
         )
-        # self.summary_agent = create_agent(
-        #     self.model,
-        #     name="Summary_Agent",
-        #     system_prompt=(
-        #         "Summarize into compact memory.\n"
-        #         "Output exactly these sections:\n"
-        #         "1) Assistant facts: key factual answers only.\n"
-        #         "2) User intent/constraints: preferences, goals, corrections.\n"
-        #         "3) Open threads: unanswered or pending items.\n"
-        #         "4) Important entities: item names, NPCs, seasons, places.\n"
-        #         "Keep it concise, max ~180 words."
-        #     ),
-        # )
+
 
     async def process_query(self, chat_id: str, message: str) -> str:
         """Process a query using the chat agent with per-chat short-term memory."""
@@ -96,8 +79,4 @@ class QueryService:
             {"messages": [HumanMessage(content=message)]},
             config={"configurable": {"thread_id": chat_id}},
         )
-        return result["messages"][-1].content
-
-    async def summarize_context(self, context: list[Message]) -> str:
-        result = await self.summary_agent.ainvoke({"messages": context})
         return result["messages"][-1].content

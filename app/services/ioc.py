@@ -30,5 +30,5 @@ class ServiceContainer:
 
     async def get_chat_service(self) -> ChatService:
         if self.chat_service is None:
-            self.chat_service = ChatService(self.persistence.cached_repository, self.query_service)
+            self.chat_service = ChatService(self.persistence.db, self.query_service)
         return self.chat_service
