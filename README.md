@@ -5,8 +5,8 @@
 An AI-powered web assistant for Stardew Valley players, featuring a chat-style interface that provides contextual game information and guidance. Instead of spending hours browsing the official wiki, users can ask questions in natural language and get quick, relevant responses.
 ## Features 
 - Chat interface: Natural conversation style interaction for asking game-related questions
-- Contextual information: Retrieves and analyzes information from the [official Stardew Valley wiki](https://stardewvalleywiki.com/Stardew_Valley_Wiki)
-- Multi-turn Conversations: Maintains conversation context across multiple interactions using Redis caching
+- Trusted source: All information was collected from the [official Stardew Valley wiki](https://stardewvalleywiki.com/Stardew_Valley_Wiki) as a part of RAG pipeline and used by agent as the source of information
+- Multi-turn Conversations: Maintains conversation context across multiple interactions using LangGraph short-term memory
 - Chats Management: Navigate through chat history and manage past conversations
 - Real-time Responses: Fast, responsive AI-powered assistance for gameplay questions
 - Appearance Management: UI automatically adapts to system preferences with the ability to manually toggle between light and dark themes
@@ -17,15 +17,14 @@ An AI-powered web assistant for Stardew Valley players, featuring a chat-style i
     - **RAG (Retrieval-Augmented Generation)**: The question is embedded and semantically similar wiki article chunks are retrieved from ChromaDB, which is pre-seeded by crawling the official Stardew Valley Wiki
     - **MCP (Model Context Protocol)**: The question and context are also sent to MCP, which analyzes the topic, formulates query and maintains conversation context for follow-up questions (e.g., "Where does Penny live?" -> "What does she like?") 
 4. **Response Delivery**: The processed information is returned to the user through the chat interface
-5. **Chat Persistence**: Conversations are stored in MongoDB, with active chats cached in Redis for performance
-6. **Context Management**: To keep multi-round conversations compact and manageable, the system stores several conversation rounds and automatically summarizes them when the context size reaches the limit, maintaining conversation history while optimizing performance
+5. **Chat Persistence**: Conversations are stored in MongoDB
+6. **Context Management**: LangGraph short-term memory is used to keep track of the conversation without exceeding the Agent's context window.
 ## Tech Stack
 ### Backend
 - Python
 - FastAPI
 - MongoDB
 - ChromaDB
-- Redis
 - MCP (Model Context Protocol)
 - Azure AI
 ### Frontend
@@ -49,7 +48,6 @@ The container consists of Redis CLI and web-based MongoDB client for persistence
 - Python 3.12+ (uv)
 - Node.js 16+ (pnpm)
 - MongoDB
-- Redis
 1. Clone repository:
 ```
 git clone https://github.com/ViktoriaPruchkovskaya/stardew-assistant.git
@@ -99,4 +97,4 @@ uv run -m rag_pipeline.main
 This only needs to be run once (or whenever you want to refresh the wiki content).
 
 ## Disclaimer
-This is an unofficial pet project. Stardew Valley is created by ConcernedApe.
+This is an unofficial project. Stardew Valley is created by ConcernedApe.
