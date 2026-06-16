@@ -2,14 +2,11 @@ import asyncio
 from contextlib import asynccontextmanager
 
 from api import chat_router, health_router
-from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from persistences.ioc import PersistenceContainer
 from services.ioc import ServiceContainer
-
-load_dotenv()
 
 
 @asynccontextmanager

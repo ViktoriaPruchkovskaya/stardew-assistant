@@ -1,15 +1,21 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from datetime import datetime
-from services.query_service import QueryService, Message
-from persistences.cached_repository import CachedRepository
+from typing import Literal
+from uuid import uuid4
 
+from persistences.database import Database
+from services.query_service import QueryService
 
+@dataclass
+class ChatMessage:
+    role: Literal["user", "assistant"]
+    content: str
+    
 @dataclass
 class Chat:
     _id: str
     created_at: datetime
-    messages: list[Message]
-
+    messages: list[ChatMessage]
 
 @dataclass
 class CreatedChat:
@@ -18,33 +24,27 @@ class CreatedChat:
 
 
 class ChatService:
-    def __init__(self, repository: CachedRepository, query_service: QueryService):
+    def __init__(self, repository: Database, query_service: QueryService):
         self.query_service = query_service
         self.repository = repository
+        self._collection = "chats"
 
     async def create_chat(self) -> CreatedChat:
-        chat = await self.repository.create_record(collection="chats", data={"messages": [], "summary": ""})
-        return CreatedChat(_id=chat["_id"], created_at=chat["created_at"])
+        id = str(uuid4())
+        created_at = datetime.now().isoformat()
+        record = Chat(_id=id, created_at=created_at, messages=[])
+        chat_id = await self.repository.insert_one(self._collection, asdict(record))
+        return CreatedChat(_id=chat_id, created_at=created_at)
 
     async def get_chat(self, chat_id: str) -> Chat:
-        metadata = await self.repository.get_metadata("chats", chat_id)
-        messages = await self._get_messages(chat_id)
-        return Chat(_id=chat_id, messages=messages, created_at=metadata["created_at"])
+        chat = await self.repository.get(self._collection, chat_id)
+        return Chat(_id=chat_id, messages=chat["messages"], created_at=chat["created_at"])
 
     async def delete_chats(self, chat_ids: list[str]):
         await self.repository.delete_many("chats", chat_ids)
-        self.repository.delete_metadata("chats", chat_ids)
 
     async def process_message(self, chat_id: str, message: str) -> str:
         result = await self.query_service.process_query(chat_id, message)
-        await self.append_messages(
-            chat_id, [Message(role="user", content=message), Message(role="assistant", content=result)]
-        )
+        messages = [{"role":"user", "content":message}, {"role":"assistant", "content":result}]
+        await self.repository.update_one(self._collection, chat_id, {"$push": {"messages": {"$each": messages}}})
         return result
-
-    async def append_messages(self, chat_id: str, messages: list[Message]):
-        await self.repository.append_list(collection="chats", id=chat_id, list_name="messages", values=messages)
-
-    async def _get_messages(self, chat_id: str) -> list[dict]:
-        messages = await self.repository.get_list("chats", chat_id, "messages")
-        return [message for message in messages]
