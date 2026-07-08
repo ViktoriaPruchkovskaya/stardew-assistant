@@ -26,7 +26,7 @@ class Judge:
             else:
                 self.judge = JudgeLLM()
         except Exception as e:
-            print(f"Fail to init {type} judge: {e}")
+            raise Exception(f"Fail to init {type} judge: {e}")
     
     async def check_answer(self, question: str, expected: str, output: str) -> JudgementResult:
         result = await self.judge.judge_answer(question, expected, output)
@@ -48,8 +48,8 @@ class JudgeNLI(JudgeStrategy):
 class JudgeLLM(JudgeStrategy):
     def __init__(self):
         model = ChatDeepSeek(
-            base_url=os.getenv("J_ENDPOINT"),
-            api_key=os.getenv("J_SUBSCRIPTION_KEY"),
+            base_url=os.getenv("JUDGE_ENDPOINT"),
+            api_key=os.getenv("JUDGE_SUBSCRIPTION_KEY"),
             model="DeepSeek-V3.2",
             temperature=0
             )

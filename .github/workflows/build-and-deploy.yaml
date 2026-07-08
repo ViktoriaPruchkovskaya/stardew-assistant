@@ -114,6 +114,5 @@ jobs:
           action: deploy
           manifests: |
             k8s/mongodb-manifest.yaml
-            k8s/redis-manifest.yaml
             k8s/app-manifest.yaml
             k8s/web-manifest.yaml

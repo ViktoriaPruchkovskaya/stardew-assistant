@@ -3,8 +3,21 @@ from bs4 import BeautifulSoup, Tag
 
 
 class Parser:
+    ignored_headings = [
+            "Portraits",
+            "Quotes",
+            "Questions",
+            "Timeline",
+            "Gallery",
+            "History",
+            "Fish Infograph",
+            "Location Tables",
+            "Fishing Zones",
+        ]
     def __init__(self):
         self.paragraphs = defaultdict(list)
+        self.header = "Overview"
+        self.sub_headings = []
 
     def get_paragraphs(self, page: str) -> dict | None:
         soup = BeautifulSoup(page, "html.parser")
@@ -17,52 +30,41 @@ class Parser:
         facts = self.__parse_info_box(container)
         if facts:
             self.paragraphs["Facts"].append(facts)
-        header = ["Overview"]
-        ignored_headings = [
-            "Portraits",
-            "Quotes",
-            "Questions",
-            "Timeline",
-            "Gallery",
-            "History",
-            "Fish Infograph",
-            "Location Tables",
-            "Fishing Zones",
-        ]
         for node in container.children:
             if node.name == "h2":
                 new_heading = self.__get_heading(node)
                 if new_heading is None:
                     raise Exception("heading not found")
-                header = [new_heading]
+                self.header = new_heading
+                self.sub_headings.clear()
 
-            if not isinstance(node, Tag) or header in ignored_headings:
+            if not isinstance(node, Tag) or self.header in self.ignored_headings:
                 continue
 
             if node.name == "h3":
                 new_sub_heading = self.__get_heading(node)
                 if not new_sub_heading:
                     continue
-                if len(header) > 1:
-                    header.pop()
-                header.append(new_sub_heading)
+                if len(self.sub_headings) > 0:
+                    self.sub_headings.pop()
+                self.sub_headings.append(new_sub_heading)
             elif node.name == "p":
-                if header in ["Schedule", "Gifts"]:
+                if self.header in ["Schedule", "Gifts"]:
                     continue
-                self.__update_content(header, node.get_text(" ", strip=True))
+                self.__update_content(node.get_text(" ", strip=True))
 
             # table parsing
             elif node.name == "table":
                 content = None
                 classes = node.get("class", [])
-                if header == "Schedule":
+                if self.header == "Schedule":
                     content = self.__parse_schedule(node)
                 elif "wikitable" in classes or "mw-collapsible" in classes:
                     content = self.__parse_table(node)
-                self.__update_content(header, content)
+                self.__update_content(content)
             elif node.name == "ul":
-                text = self.__parse_list(node)
-                self.__update_content(header, text)
+                content = self.__parse_list(node)
+                self.__update_content(content)
 
         return self.paragraphs
 
@@ -133,15 +135,19 @@ class Parser:
         infobox = soup.select_one("table#infoboxtable")
         if infobox is None:
             return None
-        facts = ""
+        block: list[str] = ["TABLE_START"]
+        lines: list[str] = []
         for row in infobox.select("tr"):
-            section = row.select_one("td#infoboxsection")
-            detail = row.select_one("td#infoboxdetail")
-            if section and detail:
-                key = section.get_text(strip=True)
-                value = self.__parse_detail(detail)
-                facts += f"{key}:{value}. "
-        return facts
+            for section in row.select("td#infoboxsection"):
+                lines.append(section.get_text(strip=True))
+            
+            for detail in row.select("td#infoboxdetail"):
+                lines.append(self.__parse_detail(detail))
+            if lines:
+                block.append(";".join(lines))
+                lines.clear()
+        block.append("TABLE_END")
+        return "\n".join(block)
 
     def __parse_detail(self, detail: Tag) -> str:
         nametemplate_spans = detail.select("span.nametemplate")
@@ -157,6 +163,7 @@ class Parser:
     def __parse_list(self, el: Tag) -> str:
         return " ".join(item.get_text(" ", strip=True) for item in el.find_all("li"))
 
-    def __update_content(self, headings: list[str], text: str):
+    def __update_content(self, text: str):
         if text:
-            self.paragraphs[f"{'|'.join(headings)}"].append(text)
+            separator= "|" if len(self.sub_headings) > 0 else ""
+            self.paragraphs[f"{self.header}{separator}{'|'.join(self.sub_headings)}"].append(text)

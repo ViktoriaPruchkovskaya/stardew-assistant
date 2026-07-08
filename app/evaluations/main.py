@@ -14,7 +14,7 @@ from evaluations.judge import Judge
 
 from services.query_service import Config, QueryService
 
-EVALS_PATH = "evaluations/results/results.csv"
+EVALS_PATH = "evaluations/results/"
 
 Verdict = Literal["PASS", "FAIL"]
 
@@ -99,8 +99,9 @@ async def run_evals(judge_type: JudgeMode):
         checkpointer=InMemorySaver(),
     )
     judge = Judge(judge_type.value)
-   
-    with open(DATASET_PATH, mode="r") as dataset_file, open(EVALS_PATH, mode="a") as results_file:
+    full_path = os.path.join(EVALS_PATH, f"results_{judge_type.value}.csv")
+    
+    with open(DATASET_PATH, mode="r") as dataset_file, open(full_path, mode="a") as results_file:
         fieldnames = list(CsvResult.__annotations__.keys())
         writer = csv.DictWriter(results_file, fieldnames=fieldnames)
         writer.writeheader()
@@ -114,13 +115,14 @@ async def run_evals(judge_type: JudgeMode):
                                       expected=data["expected"],
                                       actual_1=result["answers"][0],
                                       actual_2=result["answers"][1],
-                                      actual_3=result["answers"][2], verdict=result["verdict"]))
+                                      actual_3=result["answers"][2], verdict=result["verdict"], reasons=result["reasons"]))
 
 async def rerun_evals(judge_type: JudgeMode):
     """Rerun evaluations on previous results, compare the changes"""
     judge = Judge(judge_type.value)
+    full_path = os.path.join(EVALS_PATH, f"results_{judge_type.value}.csv")
     
-    with open(EVALS_PATH, mode="r") as results_file:
+    with open(full_path, mode="r") as results_file:
         fieldnames = list(CsvResult.__annotations__.keys())
         reader = csv.DictReader(results_file, fieldnames=fieldnames)
         next(reader)
@@ -131,8 +133,8 @@ async def rerun_evals(judge_type: JudgeMode):
             print(f"Processing {reader.line_num}")
             if result["verdict"] != row["verdict"]:
                 changed+=1
-                print(f"Question: {row["question"]}, {row["verdict"]} -> {result['verdict']}")
-                print(f"Reasons:{result['reasons']}")
+                print(f"Question: {row["question"]}, {row["verdict"]} -> {result["verdict"]}")
+                print(f"Reasons:{result["reasons"]}")
         print(f"\n{changed} verdict(s) changed")
 
             
